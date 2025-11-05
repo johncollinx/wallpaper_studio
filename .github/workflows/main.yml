@@ -15,10 +15,16 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          flutter-version: '3.24.3'  # ✅ specify an exact version for stability
+          flutter-version: '3.24.3'
 
       - name: Get dependencies
         run: flutter pub get
+
+      - name: Ensure Windows config exists
+        run: |
+          if (!(Test-Path windows)) {
+            flutter create .
+          }
 
       - name: Build Windows app
         run: flutter build windows --release
