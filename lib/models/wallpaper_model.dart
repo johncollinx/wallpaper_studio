@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 
 class WallpaperModel {
   final String id; // unique identifier
-  final String name;
   final String category;
   final String image;
   final List<String> tags; // for preview tags (Nature, Ambience, etc.)
@@ -11,7 +10,6 @@ class WallpaperModel {
 
   WallpaperModel({
     required this.id,
-    required this.name,
     required this.category,
     required this.image,
     this.tags = const [],
@@ -27,7 +25,6 @@ class WallpaperModel {
   /// Returns a copy with modified fields (useful for immutability and state mgmt)
   WallpaperModel copyWith({
     String? id,
-    String? name,
     String? category,
     String? image,
     List<String>? tags,
@@ -36,7 +33,6 @@ class WallpaperModel {
   }) {
     return WallpaperModel(
       id: id ?? this.id,
-      name: name ?? this.name,
       category: category ?? this.category,
       image: image ?? this.image,
       tags: tags ?? this.tags,
@@ -49,7 +45,6 @@ class WallpaperModel {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'name': name,
       'category': category,
       'image': image,
       'tags': tags,
@@ -62,7 +57,6 @@ class WallpaperModel {
   factory WallpaperModel.fromMap(Map<String, dynamic> map) {
     return WallpaperModel(
       id: map['id'] ?? '',
-      name: map['name'] ?? '',
       category: map['category'] ?? '',
       image: map['image'] ?? '',
       tags: List<String>.from(map['tags'] ?? []),
@@ -73,5 +67,5 @@ class WallpaperModel {
 
   @override
   String toString() =>
-      'WallpaperModel(name: $name, category: $category, isFavourite: $isFavourite)';
+      'WallpaperModel(category: $category, isFavourite: $isFavourite)';
 }
