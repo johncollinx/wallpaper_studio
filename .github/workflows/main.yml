@@ -14,8 +14,8 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
           flutter-version: '3.24.3'
+          channel: 'stable'
 
       - name: Enable Windows desktop support
         run: flutter config --enable-windows-desktop
@@ -24,24 +24,28 @@ jobs:
         run: flutter pub get
 
       - name: Ensure Windows project exists
+        shell: pwsh
         run: |
-          if (!(Test-Path windows)) {
+          if (!(Test-Path "windows")) {
+            Write-Host "🧱 Windows project not found — creating..."
             flutter create .
+          } else {
+            Write-Host "✅ Windows project already exists."
           }
 
       - name: Build Windows release
         run: flutter build windows --release
 
-      - name: Detect build path
+      - name: Detect build output path
         id: buildpath
         shell: pwsh
         run: |
-          if (Test-Path build/windows/x64/runner/Release) {
+          if (Test-Path "build/windows/x64/runner/Release") {
             echo "path=build/windows/x64/runner/Release" >> $env:GITHUB_OUTPUT
-          } elseif (Test-Path build/windows/runner/Release) {
+          } elseif (Test-Path "build/windows/runner/Release") {
             echo "path=build/windows/runner/Release" >> $env:GITHUB_OUTPUT
           } else {
-            Write-Error "❌ No Windows build output found."
+            Write-Error "❌ No Windows build output found!"
             exit 1
           }
 
@@ -49,9 +53,9 @@ jobs:
         shell: pwsh
         run: |
           $buildPath = "${{ steps.buildpath.outputs.path }}"
-          $zipPath = "$($buildPath)/../../../../wallpaper_studio_windows.zip"
-          Compress-Archive -Path "$buildPath/*" -DestinationPath $zipPath -Force
-          Write-Host "✅ Created ZIP: $zipPath"
+          $zipPath = "build/windows_build.zip"
+          Compress-Archive -Path "$buildPath/*" -DestinationPath "$zipPath" -Force
+          Write-Host "✅ Created ZIP at: $zipPath"
 
       - name: Upload Windows Folder
         uses: actions/upload-artifact@v4
@@ -64,5 +68,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: wallpaper_studio_windows
-          path: build/**/wallpaper_studio_windows.zip
+          path: build/windows_build.zip
           if-no-files-found: error
