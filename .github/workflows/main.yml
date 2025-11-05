@@ -1,34 +1,68 @@
-name: Release Flutter Windows Build
+name: Build Flutter Windows
 
 on:
-  workflow_run:
-    workflows: ["Build Flutter Windows"]
-    types:
-      - completed
+  push:
+    branches: [ main ]
 
 jobs:
-  release:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    runs-on: ubuntu-latest
+  build:
+    runs-on: windows-latest
 
     steps:
-      - name: Download Windows Build Artifact
-        uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
         with:
-          name: windows-build
-          path: release/
+          channel: 'stable'
+          flutter-version: '3.24.3'
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+      - name: Enable Windows desktop support
+        run: flutter config --enable-windows-desktop
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Ensure Windows project exists
+        run: |
+          if (!(Test-Path windows)) {
+            flutter create .
+          }
+
+      - name: Build Windows release
+        run: flutter build windows --release
+
+      - name: Detect build path
+        id: buildpath
+        shell: pwsh
+        run: |
+          if (Test-Path build/windows/x64/runner/Release) {
+            echo "path=build/windows/x64/runner/Release" >> $env:GITHUB_OUTPUT
+          } elseif (Test-Path build/windows/runner/Release) {
+            echo "path=build/windows/runner/Release" >> $env:GITHUB_OUTPUT
+          } else {
+            Write-Error "❌ No Windows build output found."
+            exit 1
+          }
+
+      - name: Create ZIP package
+        shell: pwsh
+        run: |
+          $buildPath = "${{ steps.buildpath.outputs.path }}"
+          $zipPath = "$($buildPath)/../../../../wallpaper_studio_windows.zip"
+          Compress-Archive -Path "$buildPath/*" -DestinationPath $zipPath -Force
+          Write-Host "✅ Created ZIP: $zipPath"
+
+      - name: Upload Windows Folder
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: v${{ github.run_number }}
-          name: Windows Build ${{ github.run_number }}
-          body: |
-            🚀 **Automatic Release Build**
+          name: windows-build-folder
+          path: ${{ steps.buildpath.outputs.path }}
+          if-no-files-found: error
 
-            - Built from commit: ${{ github.sha }}
-            - Triggered by: ${{ github.actor }}
-
-          files: release/**
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload ZIP Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: wallpaper_studio_windows
+          path: build/**/wallpaper_studio_windows.zip
+          if-no-files-found: error
