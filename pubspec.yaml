@@ -11,6 +11,8 @@ dependencies:
   flutter_svg: ^2.0.9
   google_fonts: ^6.2.1
   win32: ^5.5.1
+  image: ^4.2.0  # ✅ Add this
+
 
 
 
