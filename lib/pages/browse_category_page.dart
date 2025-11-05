@@ -20,51 +20,27 @@ class _BrowseCategoryPageState extends State<BrowseCategoryPage> {
   final List<WallpaperModel> wallpapers = [
     WallpaperModel(
       id: '1',
-      // name: 'Sunset Bliss'
       category: 'Nature',
       image: 'assets/images/nature.png',
-      tags: ['Nature', 'Sunset', 'Warm'],
-      description: 'Mountains,forest and landscape.',
+      description: 'Mountains, forest and landscapes.',
     ),
     WallpaperModel(
       id: '2',
-      // name: 'Urban Lights',
       category: 'Abstract',
       image: 'assets/images/abstract.jpg',
-      tags: ['City', 'Nightlife', 'Lights'],
-      description: 'Modern Geometric and artistic designs.',
+      description: 'Modern geometric and artistic designs.',
     ),
     WallpaperModel(
       id: '3',
-      // name: 'Forest Path',
       category: 'Urban',
       image: 'assets/images/urban.jpg',
-      tags: ['Nature', 'Forest', 'Pathway'],
-      description: 'Cities,architecture and street.',
+      description: 'Cities, architecture and street scenes.',
     ),
-     WallpaperModel(
+    WallpaperModel(
       id: '4',
-      // name: 'Forest Path',
       category: 'Space',
       image: 'assets/images/space.jpg',
-      tags: ['Nature', 'Forest', 'Pathway'],
       description: 'Cosmos, planets and galaxies.',
-    ),
-     WallpaperModel(
-      id: '5',
-      // name: 'Forest Path',
-      category: 'Minimalist',
-      image: 'assets/images/minimalist.jpg',
-      tags: ['Nature', 'Forest', 'Pathway'],
-      description: 'Clean, simple and elegant.',
-    ),
-     WallpaperModel(
-      id: '6',
-      // name: 'Forest Path',
-      category: 'Animals',
-      image: 'assets/images/animal.jpg',
-      tags: ['Nature', 'Forest', 'Pathway'],
-      description: 'Wildlife and nature photography.',
     ),
   ];
 
@@ -83,13 +59,10 @@ class _BrowseCategoryPageState extends State<BrowseCategoryPage> {
 
           return Column(
             children: [
-              // 🧭 Top Navigation
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
                 child: Row(
                   children: [
-                    // Logo
                     Row(
                       children: [
                         Container(
@@ -113,8 +86,6 @@ class _BrowseCategoryPageState extends State<BrowseCategoryPage> {
                       ],
                     ),
                     const Spacer(),
-
-                    // Navigation Buttons
                     Row(
                       children: [
                         TopNavButton(
@@ -149,14 +120,10 @@ class _BrowseCategoryPageState extends State<BrowseCategoryPage> {
                   ],
                 ),
               ),
-
               const Divider(height: 1, thickness: 1, color: Color(0xFFECECEC)),
-
-              // 📜 Scrollable Content
               Expanded(
                 child: SingleChildScrollView(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 40, vertical: 28),
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 28),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 1200),
                     child: Column(
@@ -164,17 +131,13 @@ class _BrowseCategoryPageState extends State<BrowseCategoryPage> {
                       children: [
                         HeroSection(isWide: maxWidth > 900),
                         const SizedBox(height: 30),
-
-                        // Title + Toggle
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
                               'Browse Categories',
                               style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 22,
-                              ),
+                                  fontWeight: FontWeight.bold, fontSize: 22),
                             ),
                             IconButton(
                               tooltip: _isGridView
@@ -195,8 +158,6 @@ class _BrowseCategoryPageState extends State<BrowseCategoryPage> {
                           ],
                         ),
                         const SizedBox(height: 18),
-
-                        // 🧩 Wallpaper Grid/List
                         CategoriesGrid(
                           wallpapers: wallpapers,
                           isGridView: _isGridView,
@@ -206,8 +167,8 @@ class _BrowseCategoryPageState extends State<BrowseCategoryPage> {
                                 await Navigator.push<WallpaperModel>(
                               context,
                               MaterialPageRoute(
-                                builder: (_) =>
-                                    WallpaperPreviewPage(wallpaper: wallpaper),
+                                builder: (_) => WallpaperPreviewPage(
+                                    wallpaper: wallpaper),
                               ),
                             );
 
