@@ -25,5 +25,4 @@ flutter:
   assets:
     # Explicitly list only actual images
     - assets/
-    - assets/images/
-    - assets/images/nature6.jpg
+    
