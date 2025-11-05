@@ -4,12 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:win32/win32.dart';
+import 'package:image/image.dart' as img;
 import '../models/wallpaper_model.dart';
-
-// 🧩 Windows API constants (needed for SystemParametersInfo)
-const int SPI_SETDESKWALLPAPER = 20;
-const int SPIF_UPDATEINIFILE = 0x01;
-const int SPIF_SENDCHANGE = 0x02;
 
 class WallpaperPreviewPage extends StatefulWidget {
   final WallpaperModel wallpaper;
@@ -83,16 +79,36 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
     if (selectedIndex == -1) selectedIndex = 0;
   }
 
-  /// 🧩 Copy asset to a temp file so Windows can access it
-  Future<String> _copyAssetToFile(String assetPath) async {
+  /// 🧩 Helper: get desktop resolution
+  Size _getScreenResolution() {
+    final width = GetSystemMetrics(SM_CXSCREEN);
+    final height = GetSystemMetrics(SM_CYSCREEN);
+    return Size(width.toDouble(), height.toDouble());
+  }
+
+  /// 🧩 Copy asset to resized temp file to prevent blur/distortion
+  Future<String> _prepareWallpaper(String assetPath) async {
     final byteData = await rootBundle.load(assetPath);
-    final file = File('${Directory.systemTemp.path}/temp_wallpaper.jpg');
-    await file.writeAsBytes(byteData.buffer.asUint8List());
-    print('Wallpaper saved at: ${file.path}');
+    final bytes = byteData.buffer.asUint8List();
+
+    final original = img.decodeImage(bytes)!;
+    final screenSize = _getScreenResolution();
+
+    // Resize while maintaining aspect ratio
+    final fitted = img.copyResize(
+      original,
+      width: screenSize.width.toInt(),
+      height: screenSize.height.toInt(),
+      interpolation: img.Interpolation.cubic,
+    );
+
+    final resizedBytes = img.encodeJpg(fitted, quality: 95);
+    final file = File('${Directory.systemTemp.path}/wallpaper_temp.jpg');
+    await file.writeAsBytes(resizedBytes);
     return file.path;
   }
 
-  /// 🧩 Set wallpaper using Win32 API (direct system call)
+  /// 🧩 Apply wallpaper via Win32 API
   Future<void> _setWallpaperWindows(String imagePath) async {
     final pathPtr = TEXT(imagePath);
     final result = SystemParametersInfo(
@@ -102,9 +118,8 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
       SPIF_UPDATEINIFILE | SPIF_SENDCHANGE,
     );
     free(pathPtr);
-
     if (result == 0) {
-      throw Exception('Failed to set wallpaper via Win32 API (Error: ${GetLastError()})');
+      throw Exception('Failed to set wallpaper via Win32 API');
     }
   }
 
@@ -130,229 +145,231 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Row(
-        children: [
-          // Left: grid of wallpapers
-          Expanded(
-            flex: 2,
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: GridView.builder(
-                itemCount: wallpapers.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  mainAxisSpacing: 20,
-                  crossAxisSpacing: 20,
-                  childAspectRatio: 0.7,
-                ),
-                itemBuilder: (context, index) {
-                  final wall = wallpapers[index];
-                  final isSelected = selectedIndex == index;
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isNarrow = constraints.maxWidth < 900;
+          return Flex(
+            direction: isNarrow ? Axis.vertical : Axis.horizontal,
+            children: [
+              // Left / Top panel
+              Expanded(
+                flex: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: GridView.builder(
+                    itemCount: wallpapers.length,
+                    gridDelegate:
+                        SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: isNarrow ? 2 : 3,
+                      mainAxisSpacing: 20,
+                      crossAxisSpacing: 20,
+                      childAspectRatio: 0.7,
+                    ),
+                    itemBuilder: (context, index) {
+                      final wall = wallpapers[index];
+                      final isSelected = selectedIndex == index;
 
-                  return GestureDetector(
-                    onTap: () => setState(() => selectedIndex = index),
-                    child: Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: Image.asset(
-                            wall.image,
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            height: double.infinity,
-                          ),
-                        ),
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            color: Colors.black26,
-                          ),
-                        ),
-                        Positioned(
-                          bottom: 12,
-                          left: 12,
-                          child: Text(
-                            wall.name,
-                            style: GoogleFonts.poppins(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          top: 10,
-                          right: 10,
-                          child: Icon(
-                            wall.isFavourite
-                                ? Icons.favorite
-                                : Icons.favorite_border,
-                            color:
-                                wall.isFavourite ? Colors.amber : Colors.white,
-                          ),
-                        ),
-                        if (isSelected)
-                          Positioned.fill(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                border:
-                                    Border.all(color: Colors.amber, width: 3),
+                      return GestureDetector(
+                        onTap: () => setState(() => selectedIndex = index),
+                        child: Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: Image.asset(
+                                wall.image,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: double.infinity,
                               ),
                             ),
-                          ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-
-          // Right: details + action
-          Expanded(
-            flex: 3,
-            child: Container(
-              padding: const EdgeInsets.all(30),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  bottomLeft: Radius.circular(20),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 8,
-                    offset: Offset(-3, 3),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Preview',
-                      style: GoogleFonts.poppins(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w600,
-                      )),
-                  const SizedBox(height: 20),
-                  Center(
-                    child: Container(
-                      width: 220,
-                      height: 180,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.black12, width: 2),
-                        image: DecorationImage(
-                          image: AssetImage(selected.image),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 25),
-                  Text(selected.name,
-                      style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600, fontSize: 20)),
-                  const SizedBox(height: 10),
-                  Text(selected.category,
-                      style: GoogleFonts.poppins(
-                          fontSize: 14, color: Colors.grey[600])),
-                  const SizedBox(height: 20),
-                  Wrap(
-                    spacing: 8,
-                    children: selected.tags.map((t) => _buildTag(t)).toList(),
-                  ),
-                  const SizedBox(height: 20),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: Text(
-                        selected.description,
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          color: Colors.grey[700],
-                          height: 1.5,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            setState(() => selected.toggleFavourite());
-                          },
-                          icon: Icon(
-                            selected.isFavourite
-                                ? Icons.favorite
-                                : Icons.favorite_border,
-                          ),
-                          label: Text(selected.isFavourite
-                              ? 'Remove Favourite'
-                              : 'Save to Favourites'),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            try {
-                              if (Platform.isWindows) {
-                                final path =
-                                    await _copyAssetToFile(selected.image);
-                                await _setWallpaperWindows(path);
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                          'Wallpaper applied successfully!'),
-                                      backgroundColor: Colors.green,
-                                    ),
-                                  );
-                                }
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                        'This feature only works on Windows.'),
-                                    backgroundColor: Colors.orange,
-                                  ),
-                                );
-                              }
-                            } catch (e) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Failed to set wallpaper: $e'),
-                                  backgroundColor: Colors.red,
+                            Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                color: Colors.black26,
+                              ),
+                            ),
+                            Positioned(
+                              bottom: 12,
+                              left: 12,
+                              child: Text(
+                                wall.name,
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 14,
                                 ),
-                              );
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFFB23F),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
-                          ),
-                          child: Text(
-                            'Set to Wallpaper',
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                            if (isSelected)
+                              Positioned.fill(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                        color: Colors.amber, width: 3),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+
+              // Right / Bottom panel
+              Expanded(
+                flex: 3,
+                child: Container(
+                  padding: const EdgeInsets.all(30),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      bottomLeft: Radius.circular(20),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 8,
+                        offset: Offset(-3, 3),
                       ),
                     ],
                   ),
-                ],
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Preview',
+                          style: GoogleFonts.poppins(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w600,
+                          )),
+                      const SizedBox(height: 20),
+                      Center(
+                        child: Container(
+                          width: isNarrow ? 300 : 220,
+                          height: isNarrow ? 220 : 180,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            border:
+                                Border.all(color: Colors.black12, width: 2),
+                            image: DecorationImage(
+                              image: AssetImage(selected.image),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 25),
+                      Text(selected.name,
+                          style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w600, fontSize: 20)),
+                      const SizedBox(height: 10),
+                      Text(selected.category,
+                          style: GoogleFonts.poppins(
+                              fontSize: 14, color: Colors.grey[600])),
+                      const SizedBox(height: 20),
+                      Wrap(
+                        spacing: 8,
+                        children:
+                            selected.tags.map((t) => _buildTag(t)).toList(),
+                      ),
+                      const SizedBox(height: 20),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          child: Text(
+                            selected.description,
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: Colors.grey[700],
+                              height: 1.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                setState(() => selected.toggleFavourite());
+                              },
+                              icon: Icon(
+                                selected.isFavourite
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
+                              ),
+                              label: Text(selected.isFavourite
+                                  ? 'Remove Favourite'
+                                  : 'Save to Favourites'),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                try {
+                                  if (Platform.isWindows) {
+                                    final path = await _prepareWallpaper(
+                                        selected.image);
+                                    await _setWallpaperWindows(path);
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                              'Wallpaper applied successfully!'),
+                                          backgroundColor: Colors.green,
+                                        ),
+                                      );
+                                    }
+                                  } else {
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                            'This feature only works on Windows.'),
+                                        backgroundColor: Colors.orange,
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content:
+                                          Text('Failed to set wallpaper: $e'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFFFB23F),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: Text(
+                                'Set as Wallpaper',
+                                style: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }
