@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../widgets/hero_section.dart';
 import '../widgets/top_nav_button.dart';
 import '../models/wallpaper_model.dart';
-import '../pages/preview_page.dart';
+import 'preview_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -18,51 +18,27 @@ class _HomePageState extends State<HomePage> {
   final List<WallpaperModel> wallpapers = [
     WallpaperModel(
       id: '1',
-      name: 'Sunset Bliss',
       category: 'Nature',
       image: 'assets/images/nature.png',
-      tags: ['Nature', 'Sunset', 'Warm'],
-      description: 'Mountains, forest and landscape.',
+      description: 'Mountains, forest and landscapes.',
     ),
     WallpaperModel(
       id: '2',
-      name: 'Urban Lights',
       category: 'Abstract',
       image: 'assets/images/abstract.jpg',
-      tags: ['City', 'Nightlife', 'Lights'],
       description: 'Modern geometric and artistic designs.',
     ),
     WallpaperModel(
       id: '3',
-      name: 'Forest Path',
       category: 'Urban',
       image: 'assets/images/urban.jpg',
-      tags: ['Nature', 'Forest', 'Pathway'],
-      description: 'Cities, architecture and street scenes.',
+      description: 'Cities, architecture, and street scenes.',
     ),
     WallpaperModel(
       id: '4',
-      name: 'Cosmic Wonder',
       category: 'Space',
       image: 'assets/images/space.jpg',
-      tags: ['Planets', 'Galaxies', 'Stars'],
-      description: 'Cosmos, planets and galaxies.',
-    ),
-    WallpaperModel(
-      id: '5',
-      name: 'Minimalist Design',
-      category: 'Minimalist',
-      image: 'assets/images/minimalist.jpg',
-      tags: ['Clean', 'Simple', 'Elegant'],
-      description: 'Clean, simple and elegant designs.',
-    ),
-    WallpaperModel(
-      id: '6',
-      name: 'Wildlife',
-      category: 'Animals',
-      image: 'assets/images/animal.jpg',
-      tags: ['Wildlife', 'Nature', 'Photography'],
-      description: 'Wildlife and nature photography.',
+      description: 'Cosmos, planets, and galaxies.',
     ),
   ];
 
@@ -100,11 +76,9 @@ class _HomePageState extends State<HomePage> {
             children: [
               // Top Navigation
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
                 child: Row(
                   children: [
-                    // Logo
                     Row(
                       children: [
                         Container(
@@ -126,7 +100,6 @@ class _HomePageState extends State<HomePage> {
                       ],
                     ),
                     const Spacer(),
-                    // Navigation
                     Row(
                       children: [
                         TopNavButton(
@@ -157,18 +130,15 @@ class _HomePageState extends State<HomePage> {
                           onTap: () => _onNavTap('/settings'),
                         ),
                       ],
-                    )
+                    ),
                   ],
                 ),
               ),
-
               const Divider(height: 1, thickness: 1, color: Color(0xFFECECEC)),
-
-              // Page Body
+              // Body
               Expanded(
                 child: SingleChildScrollView(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 40, vertical: 28),
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 28),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 1200),
                     child: Column(
@@ -176,7 +146,6 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         HeroSection(isWide: isWide),
                         const SizedBox(height: 30),
-                        // Categories Section
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -192,43 +161,21 @@ class _HomePageState extends State<HomePage> {
                           ],
                         ),
                         const SizedBox(height: 18),
-                        // Categories Grid with counts and gradient overlay
                         Wrap(
                           spacing: 20,
                           runSpacing: 20,
-                          children: [
-                            _buildCategoryCard(
-                                title: 'Nature',
-                                subtitle: 'Mountains and Landscapes',
-                                count: wallpapers
-                                    .where((w) => w.category == 'Nature')
-                                    .length,
-                                image: 'assets/images/nature.jpg'),
-                            _buildCategoryCard(
-                                title: 'Abstract',
-                                subtitle: 'Geometric and artistic',
-                                count: wallpapers
-                                    .where((w) => w.category == 'Abstract')
-                                    .length,
-                                image: 'assets/images/abstract.jpg'),
-                            _buildCategoryCard(
-                                title: 'Urban',
-                                subtitle: 'Cities and architecture',
-                                count: wallpapers
-                                    .where((w) => w.category == 'Urban')
-                                    .length,
-                                image: 'assets/images/urban.jpg'),
-                            _buildCategoryCard(
-                                title: 'Space',
-                                subtitle: 'Planets and galaxies',
-                                count: wallpapers
-                                    .where((w) => w.category == 'Space')
-                                    .length,
-                                image: 'assets/images/space.jpg'),
-                          ],
+                          children: wallpapers
+                              .map((w) => _buildCategoryCard(
+                                    title: w.category,
+                                    subtitle: w.description,
+                                    image: w.image,
+                                    count: wallpapers
+                                        .where((x) => x.category == w.category)
+                                        .length,
+                                  ))
+                              .toList(),
                         ),
                         const SizedBox(height: 30),
-                        // Optionally show featured wallpapers here
                       ],
                     ),
                   ),
@@ -244,8 +191,8 @@ class _HomePageState extends State<HomePage> {
   Widget _buildCategoryCard({
     required String title,
     required String subtitle,
-    required int count,
     required String image,
+    required int count,
   }) {
     return GestureDetector(
       onTap: () => Navigator.pushNamed(context, '/browse', arguments: title),
@@ -257,11 +204,12 @@ class _HomePageState extends State<HomePage> {
             Image.asset(image, fit: BoxFit.cover),
             Container(
               decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                colors: [Colors.black.withOpacity(0.6), Colors.transparent],
-                begin: Alignment.bottomCenter,
-                end: Alignment.topCenter,
-              )),
+                gradient: LinearGradient(
+                  colors: [Colors.black.withOpacity(0.6), Colors.transparent],
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                ),
+              ),
             ),
             Padding(
               padding: const EdgeInsets.all(18.0),
@@ -280,15 +228,13 @@ class _HomePageState extends State<HomePage> {
                             color: Colors.white70, fontSize: 13)),
                     const SizedBox(height: 10),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(40),
                       ),
                       child: Text('$count wallpapers',
-                          style: GoogleFonts.poppins(
-                              color: Colors.white, fontSize: 12)),
+                          style: GoogleFonts.poppins(color: Colors.white, fontSize: 12)),
                     )
                   ]),
             )
