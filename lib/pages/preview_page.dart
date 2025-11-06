@@ -27,7 +27,6 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
   @override
   void initState() {
     super.initState();
-
     wallpapers = [
       WallpaperModel(
         id: 'w1',
@@ -237,8 +236,7 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () =>
-                      setState(() => selected.toggleFavourite()),
+                  onPressed: () => setState(() => selected.toggleFavourite()),
                   icon: Icon(selected.isFavourite
                       ? Icons.favorite
                       : Icons.favorite_border),
@@ -303,3 +301,4 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
     );
   }
 }
+
