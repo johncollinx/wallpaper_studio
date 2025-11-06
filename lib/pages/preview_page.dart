@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ffi/ffi.dart';
-import 'package:win32/win32.dart';
+import 'package:win32/win32.dart' as win32;
 import 'package:image/image.dart' as img;
 import '../models/wallpaper_model.dart';
 
@@ -27,6 +27,7 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
   @override
   void initState() {
     super.initState();
+
     wallpapers = [
       WallpaperModel(
         id: 'w1',
@@ -72,8 +73,8 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
     final original = img.decodeImage(bytes);
     if (original == null) throw Exception('Failed to decode image');
 
-    final width = GetSystemMetrics(SM_CXSCREEN);
-    final height = GetSystemMetrics(SM_CYSCREEN);
+    final width = win32.GetSystemMetrics(win32.SM_CXSCREEN);
+    final height = win32.GetSystemMetrics(win32.SM_CYSCREEN);
     final scale = max(width / original.width, height / original.height);
 
     final resized = img.copyResize(
@@ -89,7 +90,7 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
 
   Future<void> _setWallpaperWindows(String imagePath) async {
     final pathPtr = imagePath.toNativeUtf16();
-    final result = SystemParametersInfoW(
+    final result = win32.SystemParametersInfoW(
       SPI_SETDESKWALLPAPER,
       0,
       pathPtr,
@@ -98,7 +99,7 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
     calloc.free(pathPtr);
 
     if (result == 0) {
-      final errorCode = GetLastError();
+      final errorCode = win32.GetLastError();
       throw Exception('Failed to set wallpaper (Error $errorCode)');
     }
   }
@@ -194,12 +195,16 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
           topLeft: Radius.circular(20),
           bottomLeft: Radius.circular(20),
         ),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(-3, 3))],
+        boxShadow: [
+          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(-3, 3))
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Preview', style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w600)),
+          Text('Preview',
+              style: GoogleFonts.poppins(
+                  fontSize: 22, fontWeight: FontWeight.w600)),
           const SizedBox(height: 20),
           Center(
             child: Container(
@@ -208,19 +213,23 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: Colors.black12, width: 2),
-                image: DecorationImage(image: AssetImage(selected.image), fit: BoxFit.cover),
+                image: DecorationImage(
+                    image: AssetImage(selected.image), fit: BoxFit.cover),
               ),
             ),
           ),
           const SizedBox(height: 25),
-          Text(selected.category, style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 20)),
+          Text(selected.category,
+              style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600, fontSize: 20)),
           const SizedBox(height: 10),
           Wrap(spacing: 8, children: selected.tags.map(_buildTag).toList()),
           const SizedBox(height: 20),
           Expanded(
             child: SingleChildScrollView(
               child: Text(selected.description,
-                  style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[700], height: 1.5)),
+                  style: GoogleFonts.poppins(
+                      fontSize: 14, color: Colors.grey[700], height: 1.5)),
             ),
           ),
           const SizedBox(height: 20),
@@ -228,9 +237,14 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () => setState(() => selected.toggleFavourite()),
-                  icon: Icon(selected.isFavourite ? Icons.favorite : Icons.favorite_border),
-                  label: Text(selected.isFavourite ? 'Remove Favourite' : 'Save to Favourites'),
+                  onPressed: () =>
+                      setState(() => selected.toggleFavourite()),
+                  icon: Icon(selected.isFavourite
+                      ? Icons.favorite
+                      : Icons.favorite_border),
+                  label: Text(selected.isFavourite
+                      ? 'Remove Favourite'
+                      : 'Save to Favourites'),
                 ),
               ),
               const SizedBox(width: 10),
@@ -243,22 +257,32 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
                         await _setWallpaperWindows(path);
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Wallpaper applied successfully!'), backgroundColor: Colors.green),
+                            const SnackBar(
+                              content:
+                                  Text('Wallpaper applied successfully!'),
+                              backgroundColor: Colors.green,
+                            ),
                           );
                         }
                       }
                     } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Failed to set wallpaper: $e'), backgroundColor: Colors.red),
+                        SnackBar(
+                          content: Text('Failed to set wallpaper: $e'),
+                          backgroundColor: Colors.red,
+                        ),
                       );
                     }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFFB23F),
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: Text('Set to Wallpaper', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                  child: Text('Set to Wallpaper',
+                      style:
+                          GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                 ),
               ),
             ],
@@ -270,9 +294,12 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
 
   Widget _buildTag(String text) {
     return Chip(
-      label: Text(text, style: GoogleFonts.poppins(fontSize: 13, color: Colors.black87)),
+      label: Text(text,
+          style:
+              GoogleFonts.poppins(fontSize: 13, color: Colors.black87)),
       backgroundColor: const Color(0xFFEDEDED),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+      shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
     );
   }
 }
