@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:google_fonts/google_fonts.dart';
-import 'dart:ffi'; // <-- FIX 1: Added missing import for DynamicLibrary
+import 'dart:ffi'; // Added for DynamicLibrary
 import 'package:ffi/ffi.dart';
 import 'package:win32/win32.dart';
 import 'package:image/image.dart' as img;
@@ -25,14 +25,14 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
   late List<WallpaperModel> wallpapers;
   late int selectedIndex;
   
-  // Fix: Declare the function pointer for SystemParametersInfo
-  late final SystemParametersInfo _systemParametersInfoW; // <-- FIX 2: Corrected type
+  // Fix: Declare the function pointer using the correct wrapper class
+  late final SystemParametersInfo _systemParametersInfo;
 
   @override
   void initState() {
     super.initState();
-    // Fix: Initialize the function pointer by opening user32.dll
-    _systemParametersInfoW = SystemParametersInfo(DynamicLibrary.open('user32.dll')); // <-- FIX 2: Corrected type
+    // Fix: Initialize the function pointer by creating an instance of the wrapper
+    _systemParametersInfo = SystemParametersInfo(DynamicLibrary.open('user32.dll'));
 
     wallpapers = [
       WallpaperModel(
@@ -96,8 +96,8 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
 
   Future<void> _setWallpaperWindows(String imagePath) async {
     final pathPtr = imagePath.toNativeUtf16();
-    // Fix: Use the initialized function pointer
-    final result = _systemParametersInfoW(
+    // Fix: Use the initialized function pointer's call() method
+    final result = _systemParametersInfo.call(
       SPI_SETDESKWALLPAPER,
       0,
       pathPtr,
