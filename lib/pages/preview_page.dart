@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:ffi'; // <-- FIX 1: Added missing import for DynamicLibrary
 import 'package:ffi/ffi.dart';
 import 'package:win32/win32.dart';
 import 'package:image/image.dart' as img;
@@ -24,14 +25,14 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
   late List<WallpaperModel> wallpapers;
   late int selectedIndex;
   
-  // Fix: Declare the function pointer for SystemParametersInfoW
-  late final SystemParametersInfoW _systemParametersInfoW;
+  // Fix: Declare the function pointer for SystemParametersInfo
+  late final SystemParametersInfo _systemParametersInfoW; // <-- FIX 2: Corrected type
 
   @override
   void initState() {
     super.initState();
     // Fix: Initialize the function pointer by opening user32.dll
-    _systemParametersInfoW = SystemParametersInfoW(DynamicLibrary.open('user32.dll'));
+    _systemParametersInfoW = SystemParametersInfo(DynamicLibrary.open('user32.dll')); // <-- FIX 2: Corrected type
 
     wallpapers = [
       WallpaperModel(
